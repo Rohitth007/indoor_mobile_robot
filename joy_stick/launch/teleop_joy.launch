@@ -1,0 +1,23 @@
+<launch>
+ <!-- The joy node -->
+  <node respawn="true" pkg="joy"
+        type="joy_node" name="turtle_joy" >
+    <param name="dev" type="string" value="/dev/input/js0" />
+    <param name="deadzone" value="0.15" />
+  </node>
+  
+  <!-- Teleop thorugh joystick node -->
+  <node pkg="joy_stick" type="teleop_joy" name="teleop_joy_node"/>
+
+  <!-- Hardware interface node -->
+  <!-- node pkg="hw_interface" type="hw_interface.py" name="hw_interface_node"/-->
+  
+  <!-- Params -->
+  <param name="axis_linear" value="1" type="int"/>
+  <param name="axis_angular" value="0" type="int"/>
+  <param name="scale_linear" value="1" type="double"/>
+  <param name="scale_angular" value="0.5" type="double"/>
+  <param name="robot_width" value="475" type="int"/>
+  <param name="wheel_radius" value="37" type="int"/>
+
+</launch>
