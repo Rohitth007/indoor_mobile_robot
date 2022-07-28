@@ -11,7 +11,7 @@
 #define LH_DIR 4
 
 #define GR 50.9 // Gear Ratio
-#define PPR 7.0 // Pulse Per Revolution
+#define PPR 2.0 // Pulse Per Revolution
 
 #define MIN_PWM 25
 #define MIN_SPD 10.12 // in revolutions per second
@@ -20,3 +20,6 @@
 // Proportional speed controller
 #define left_motor_gain 1.1  
 #define right_motor_gain 1.1 
+
+//Only the falling edge can be detected and we are only detecting 
+// falling edge on one channel so that would be 2 pulse per revolution

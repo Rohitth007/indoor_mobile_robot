@@ -76,13 +76,14 @@ void setup()
   pinMode(RH_PWM,OUTPUT);
   pinMode(LH_PWM,OUTPUT);
 
-  // initialize hardware interrupts for RISE event
+  /* initialize hardware interrupts for RISE event
   attachInterrupt(digitalPinToInterrupt(LH_ENCODER_A), leftEncoderRiseEvent, RISING);
   attachInterrupt(digitalPinToInterrupt(RH_ENCODER_A), rightEncoderRiseEvent, RISING);
+  */
   
   // initialize hardware interrupts for FALL event
-  attachInterrupt(digitalPinToInterrupt(LH_ENCODER_A), leftEncoderRiseEvent, FALLING);
-  attachInterrupt(digitalPinToInterrupt(RH_ENCODER_A), rightEncoderRiseEvent, FALLING);
+  attachInterrupt(digitalPinToInterrupt(LH_ENCODER_A), leftEncoderFallEvent, FALLING);
+  attachInterrupt(digitalPinToInterrupt(RH_ENCODER_A), rightEncoderFallEvent, FALLING);
 
   Serial.begin(9600);
   //Data expected in format<left_speed, right _speed>
@@ -152,9 +153,10 @@ void loop()
   Serial.print(",");
   Serial.print(round(rightMotor.encoderCount));
   Serial.print(">\n");
+  
 }
 
-//============
+/*============
 void leftEncoderRiseEvent() 
 {
   if (digitalRead(LH_ENCODER_B) == HIGH) 
@@ -168,7 +170,7 @@ void leftEncoderRiseEvent()
       leftMotor.encoderCount--;
   }
 }
-
+*/
 //============
 void leftEncoderFallEvent() 
 {
@@ -184,33 +186,36 @@ void leftEncoderFallEvent()
   }
 }
 
-//============
+/*============
 void rightEncoderRiseEvent() 
 {
+  Serial.print("Right rise");
   if (digitalRead(RH_ENCODER_B) == HIGH)
   {
+    Serial.println("B high");
     if (rightMotor.encoderCount < encoder_maximum) 
       rightMotor.encoderCount++;  
   }
   else 
   {
+    Serial.println("B low");
     if (rightMotor.encoderCount > encoder_minimum) 
       rightMotor.encoderCount--;
   }
 }
-
+*/
 //============
 void rightEncoderFallEvent() 
 {
   if (digitalRead(RH_ENCODER_B) == LOW) 
   {
     if (rightMotor.encoderCount < encoder_maximum) 
-      rightMotor.encoderCount++;  
+      rightMotor.encoderCount--;  
   }
   else 
   {
     if (rightMotor.encoderCount > encoder_minimum) 
-      rightMotor.encoderCount--;
+      rightMotor.encoderCount++;
   }
 }
 
