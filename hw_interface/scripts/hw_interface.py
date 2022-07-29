@@ -82,14 +82,14 @@ def convert_vel_cmd(msg):
 
   global wheel_radius, robot_width, left_speed, right_speed
 
-  cmd_linear_vel = msg.linear.x*1000.0
-  cmd_angular_vel = msg.angular.z
+  cmd_linear_vel = msg.linear.x*1000.0 # in mm/sec
+  cmd_angular_vel = msg.angular.z # in rad/sec
 
-  right_speed = ((2.0*cmd_linear_vel) + (cmd_angular_vel*robot_width))/(2*wheel_radius)
-  left_speed = ((2.0*cmd_linear_vel) - (cmd_angular_vel*robot_width))/(2*wheel_radius)
+  right_speed = ((2.0*cmd_linear_vel) + (cmd_angular_vel*robot_width))/(2*wheel_radius) #in rad/sec
+  left_speed = ((2.0*cmd_linear_vel) - (cmd_angular_vel*robot_width))/(2*wheel_radius) #in rad/sec
   
-  right_speed = right_speed*3
-  left_speed = left_speed*3
+  right_speed = right_speed/(2*3.14) #in revolutions per second
+  left_speed = left_speed/(2*3.14) #in revolutions per second
 
   return
 
