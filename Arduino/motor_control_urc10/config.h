@@ -14,12 +14,12 @@
 #define PPR 2.0 // Pulse Per Revolution
 
 #define MIN_PWM 25
-#define MIN_SPD 10.12 // in revolutions per second
-#define MAX_SPD 115 // in revolutions per second
+#define MIN_SPD 0 // in revolutions per second
+#define MAX_SPD 4 // in revolutions per second
 
 // Proportional speed controller
-#define left_motor_gain 1.1  
-#define right_motor_gain 1.1 
+#define left_motor_gain 10 
+#define right_motor_gain 10 
 
 //Only the falling edge can be detected and we are only detecting 
 // falling edge on one channel so that would be 2 pulse per revolution

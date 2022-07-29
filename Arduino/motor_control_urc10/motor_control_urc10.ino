@@ -29,7 +29,8 @@ public:
   {
     if (abs(s) > MAX_SPD)
     {
-      desiredSpeed = MAX_SPD;
+      int signofspeed = (s > 0) - (s < 0);
+      desiredSpeed = signofspeed*MAX_SPD;
       return;
     }
 
