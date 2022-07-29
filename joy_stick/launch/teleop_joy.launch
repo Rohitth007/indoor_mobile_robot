@@ -10,7 +10,7 @@
   <node pkg="joy_stick" type="teleop_joy" name="teleop_joy_node"/>
 
   <!-- Hardware interface node -->
-  <!-- node pkg="hw_interface" type="hw_interface.py" name="hw_interface_node"/-->
+  <node pkg="hw_interface" type="hw_interface.py" name="hw_interface_node"/>
   
   <!-- Params -->
   <param name="axis_linear" value="1" type="int"/>
