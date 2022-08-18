@@ -12,6 +12,8 @@ double dt = 0.0;                          //deltatime in seconds
 long encoder_minimum = -2147483640;
 long encoder_maximum = 2147483640;
 
+//Feed Forward Control Coefficient(Linear Model)
+float ff = (MAX_PWM-MIN_PWM)/(MAX_SPD - MIN_SPD);
 //'Motor' Class for specific data corresponding to each motor
 class Motor
 {
@@ -22,7 +24,12 @@ public:
   long encoderCount = 0;
   long prevEncoderCount = 0;
   int output;
-  float gain = 0;
+  float Kp = 0;
+  float Kd = 0;
+  float Ki= 0;
+  float prevError= 0;
+  float currentError = 0;
+  float errorSum= 0;
 
   void setDesiredSpeed(float s)
   // s is desired speed in revolutions per second
@@ -40,25 +47,31 @@ public:
       return;
     }
     desiredSpeed = s;
+   
   }
 
-  float computeOutput(float dt)
+  void computeOutput(float dt)
   //dt is deltatime in seconds
   {
     currentSpeed = ((encoderCount - prevEncoderCount) / (PPR * dt * GR)); //in revolutions per second
     prevEncoderCount = encoderCount;
-    output = gain * (desiredSpeed - currentSpeed);
+    currentError = desiredSpeed - currentSpeed;
+    errorSum += currentError*dt;
+    output = ff*desiredSpeed + Kp*(desiredSpeed - currentSpeed) + Kd*(currentError-prevError)/dt + Ki*errorSum;//Feed Forward + PID Controller
+    prevError = currentError;
   }
 
-  Motor(float motorGain)
+  Motor(float KpGain, float KdGain,float KiGain)
   //Constructor for Motor Class
   {
-    gain = motorGain;
+    Kp = KpGain;
+    Kd = KdGain;
+    Ki = KiGain;
   }
 };
 
-Motor leftMotor(left_motor_gain);
-Motor rightMotor(right_motor_gain);
+Motor leftMotor(left_motor_P_gain,left_motor_D_gain,left_motor_I_gain);
+Motor rightMotor(right_motor_P_gain,right_motor_D_gain,right_motor_I_gain);
 
 void setup()
 {
@@ -76,14 +89,13 @@ void setup()
   pinMode(RH_PWM, OUTPUT);
   pinMode(LH_PWM, OUTPUT);
 
-  /* initialize hardware interrupts for RISE event
-  attachInterrupt(digitalPinToInterrupt(LH_ENCODER_A), leftEncoderRiseEvent, RISING);
-  attachInterrupt(digitalPinToInterrupt(RH_ENCODER_A), rightEncoderRiseEvent, RISING);
-  */
 
   // initialize hardware interrupts for FALL event
   attachInterrupt(digitalPinToInterrupt(LH_ENCODER_A), leftEncoderFallEvent, FALLING);
   attachInterrupt(digitalPinToInterrupt(RH_ENCODER_A), rightEncoderFallEvent, FALLING);
+
+  //attachInterrupt(digitalPinToInterrupt(LH_ENCODER_A), leftEncoderRiseEvent, RISING);
+  //attachInterrupt(digitalPinToInterrupt(RH_ENCODER_A), rightEncoderRiseEvent, RISING);
 
   Serial.begin(9600);
   //Data expected in format<left_speed, right _speed>
@@ -148,44 +160,69 @@ void loop()
   analogWrite(RH_PWM, abs(rightMotor.output));
 
   //return current tick count
+  
   Serial.print("<");
   Serial.print(round(leftMotor.encoderCount));
   Serial.print(",");
   Serial.print(round(rightMotor.encoderCount));
   Serial.print(">\n");
+
+//Debug Code
+/*   
+  Serial.print("<");
+  Serial.print(round(leftMotor.encoderCount));
+  Serial.print(",");
+  Serial.print(round(rightMotor.encoderCount));
+  Serial.print(",");
+  Serial.print(leftMotor.currentSpeed);
+  Serial.print(",");
+  Serial.print(rightMotor.currentSpeed);
+  Serial.print(",");
+  Serial.print(leftMotor.output);
+  Serial.print(",");
+  Serial.print(rightMotor.output);
+  Serial.print(",");
+  Serial.print(rightMotor.desiredSpeed);
+  Serial.print(",");
+  Serial.print(leftMotor.desiredSpeed);
+  Serial.print(">\n");
+  */
 }
 
-/*============
-void leftEncoderRiseEvent() 
-{
+
+/*void leftEncoderRiseEvent() 
+{ 
+  Serial.print("Left rise");
   if (digitalRead(LH_ENCODER_B) == HIGH) 
-  {
+  { Serial.println("B high");
+    
     if (leftMotor.encoderCount < encoder_maximum) 
       leftMotor.encoderCount++; 
   }
   else 
-  {
+  { Serial.println("B low");
     if (leftMotor.encoderCount > encoder_minimum) 
       leftMotor.encoderCount--;
   }
 }
 */
-//============
 void leftEncoderFallEvent()
-{
+{ 
+  
   if (digitalRead(LH_ENCODER_B) == LOW)
-  {
+  { 
+   
     if (leftMotor.encoderCount < encoder_maximum)
       leftMotor.encoderCount++;
   }
   else
-  {
+  { 
     if (leftMotor.encoderCount > encoder_minimum)
       leftMotor.encoderCount--;
   }
 }
 
-/*============
+/*
 void rightEncoderRiseEvent() 
 {
   Serial.print("Right rise");
@@ -203,9 +240,9 @@ void rightEncoderRiseEvent()
   }
 }
 */
-//============
 void rightEncoderFallEvent()
-{
+{ 
+  
   if (digitalRead(RH_ENCODER_B) == LOW)
   {
     if (rightMotor.encoderCount < encoder_maximum)
@@ -262,8 +299,8 @@ void parseData()
   char *strtokIndx; // this is used by strtok() as an index
 
   strtokIndx = strtok(receivedChars, ","); // get the first part - left speed
-  leftMotor.setDesiredSpeed(atoi(strtokIndx));
+  leftMotor.setDesiredSpeed(atof(strtokIndx));
 
   strtokIndx = strtok(NULL, ","); // get the second part - right speed
-  rightMotor.setDesiredSpeed(atoi(strtokIndx));
+  rightMotor.setDesiredSpeed(atof(strtokIndx));
 }
