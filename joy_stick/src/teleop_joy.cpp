@@ -1,6 +1,8 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <sensor_msgs/Joy.h>
+#include <diagnostic_msgs/DiagnosticArray.h>
+#include <string.h>
 
 struct node_helper
 {
@@ -12,6 +14,15 @@ struct node_helper
   {
     cmd_vel.angular.z = scale_angular * joy->axes[axis_angular];
     cmd_vel.linear.x = scale_linear * joy->axes[axis_linear];
+  }
+
+  void diag_Callback(const diagnostic_msgs::DiagnosticArray::ConstPtr &diag)
+  { 
+    auto msg = diag->status[0].message;
+    if(msg == "Joystick not open."){
+         cmd_vel.angular.z = 0;
+         cmd_vel.linear.x = 0;
+    }
   }
 
   //constructor to initialise
@@ -44,8 +55,11 @@ int main(int argc, char **argv)
   //Create publisher
   ros::Publisher vel_pub = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
 
-  //Create subscriber
+  //Create subscriber for topic "joy"
   ros::Subscriber joy_sub = nh.subscribe("joy", 10, &node_helper::joy_Callback, &joy_helper);
+
+  //Create subscriber for topic "diagnostic"
+  ros::Subscriber diag_sub = nh.subscribe("diagnostics", 10, &node_helper::diag_Callback, &joy_helper);
 
   ros::Rate loop_rate(1);
 
