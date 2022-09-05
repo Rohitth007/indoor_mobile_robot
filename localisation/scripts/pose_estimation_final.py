@@ -73,14 +73,9 @@ def main():
     
     #hardware parameters 
 
-    parameters_table = dict()
-    with open(r'params.yaml') as file:
-            parameters_table = yaml.load(file, Loader=yaml.FullLoader)
-
-    
-    ticks_to_meter = parameters_table['ticks_to_meter'] #in mm per tick
-    width_robo = parameters_table['width_robo']  #in mm
-    scanner_displacement = parameters_table['scanner_displacement']  #in mm
+    ticks_to_meter = rospy.get_param("ticks_to_meter") #in mm per tick
+    width_robo = rospy.get_param("robot_width")  #in mm
+    scanner_displacement = rospy.get_param("scanner_displacement")   #in mm
     
     
     #begining pose estimation

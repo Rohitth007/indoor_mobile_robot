@@ -1,0 +1,12 @@
+<launch>
+ <node pkg="localisation" type="pose_estimation.py" name="pose_update"/>
+ <node pkg="localisation" type="line_extract_node.py" name="feature_from_lidar"/>
+ 
+ <!-- Params -->
+ <param name="ticks_to_meter" value="1.83908" type="double"/><!--mm-per-tick-->
+ <param name="robot_width" value="475" type="double"/> <!-- mm -->
+ <param name="wheel_radius" value="37" type="double"/> <!-- mm -->
+ <param name="scanner_displacement" value="0" type="double"/> <!-- mm -->
+ 
+  
+</launch>
