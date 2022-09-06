@@ -5,6 +5,7 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker
 import matplotlib.pyplot as plt 
 import warnings
+from localisation.msg import features
 warnings.simplefilter('ignore')
 
 def dist(p1,p2):
@@ -177,16 +178,20 @@ def merge(points):
     #print(corellation_dict)
     i=0
     params_clean=[]
-
+    end_points=[]
     while i<points.shape[0]-1:
         
         plt.plot(points[i:i+2,0],points[i:i+2,1])
         ro,alpha = cartesian_to_polar(points[i:i+2,0],points[i:i+2,1],True)
         ro,alpha = radius_negative_conversion(ro,alpha)
         params_clean.append([ro,alpha])
+        tp1=(points[i,0],points[i,1])
+        tp2=(points[i+1,0],points[i+1,1])
+        end_points.append([tp1[0],tp1[1]])
+        end_points.append([tp2[0],tp2[1]])
         i+=2
 
-    return params_clean,points
+    return params_clean,points,end_points
 
 def split_and_merge(ranges,angles):
 
@@ -196,11 +201,12 @@ def split_and_merge(ranges,angles):
     #spliiting the points and getting a collection of endpoints for line segments
     points=split(points_cartesian,split_threshold)
     #print(points)
-    params_clean,points=merge(points)
-    return points
+    params_clean,points,end_points=merge(points)
+    return params_clean,points,end_points
 
 def callback(data):
     global pub
+    #print(1)
     #getting the angle and ranges from the subscriber data
     ranges = np.asarray(data.ranges)
     angle_increment=data.angle_increment
@@ -210,13 +216,26 @@ def callback(data):
     angles=angles[[ranges < 1E308]]
     ranges=ranges[[ranges < 1E308]]
     #print(angles)
-    points = split_and_merge(ranges, angles)
-    #print(points)
-    #marker=make_marker(points)
-    data_to_send = Float64MultiArray()  # the data to be sent, initialise the array
-    data_to_send.data = points # assign the array with the value you want to send
+    params_clean,points,end_points_list = split_and_merge(ranges, angles)
+    
+    #print(end_points_list)
+    #print(" ")
+    #print(params_clean)
+
+    marker=make_marker(points)
+    data_to_send = features()  # the data to be sent, initialise the array
+    num_lines=(points.shape[0])/2
+ 
+    #print(num_lines)
+
+    if(isinstance(num_lines, int)):
+        data_to_send.num_lines = points.shape[0]/2 # assign the array with the value you want to send
+    data_to_send.radius_values=params_clean
+    #data_to_send.endpoints=end_points_list
+    data_to_send.alpha_values=params_clean#params_clean[:,1]
     pub.publish(data_to_send)
     #rospy.loginfo("Hi")
+
     #pub.publish(marker)
 
 
@@ -224,7 +243,7 @@ if __name__== "__main__":
    
     rospy.init_node('feature_from_lidar')
     #pub = rospy.Publisher('visualization_msgs/MarkerArray',Marker,queue_size=10)
-    pub = rospy.Publisher('line_features', Float64MultiArray, queue_size=1)
+    pub = rospy.Publisher('line_features', features, queue_size=10)
     print("starting scan analysis")
     rate=rospy.Rate(10)
     rospy.Subscriber("scan", LaserScan, callback)

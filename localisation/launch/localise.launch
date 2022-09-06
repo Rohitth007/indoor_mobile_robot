@@ -1,5 +1,5 @@
 <launch>
- <node pkg="localisation" type="pose_estimation.py" name="pose_update"/>
+ <!--node pkg="localisation" type="pose_estimation.py" name="pose_update"/-->
  <node pkg="localisation" type="line_extract_node.py" name="feature_from_lidar"/>
  
  <!-- Params -->
@@ -8,5 +8,9 @@
  <param name="wheel_radius" value="37" type="double"/> <!-- mm -->
  <param name="scanner_displacement" value="0" type="double"/> <!-- mm -->
  
-  
+ <!-- Record -->
+ <!--node name="bag_record_laser_scan" pkg="rosbag" type="record"
+        args="record -o /scan"/-->
+
+ 
 </launch>

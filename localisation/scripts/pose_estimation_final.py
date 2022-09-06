@@ -41,7 +41,7 @@ def pose_update(prev_pose,tick_difference,ticks_to_meter,width_robo,scanner_disp
         #calulating the center about which the curving happens 
 		centerx=x-(R+width_robo/2)*sin(theta)
 		centery=y+(R+width_robo/2)*cos(theta)
-		theta+=alpha
+		theta=(theta + alpha + pi) % (2*pi) - pi
 		
 		#updating the x and using newly calualted theta value 
 		x=centerx+(R+width_robo/2)*sin(theta)+scanner_displacement*sin(theta)
