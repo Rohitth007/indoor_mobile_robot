@@ -299,8 +299,8 @@ void parseData()
   char *strtokIndx; // this is used by strtok() as an index
 
   strtokIndx = strtok(receivedChars, ","); // get the first part - left speed
-  leftMotor.setDesiredSpeed(atof(strtokIndx));
+  leftMotor.setDesiredSpeed(atof(strtokIndx)/100);
 
   strtokIndx = strtok(NULL, ","); // get the second part - right speed
-  rightMotor.setDesiredSpeed(atof(strtokIndx));
+  rightMotor.setDesiredSpeed(atof(strtokIndx)/100);
 }
