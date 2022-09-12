@@ -41,7 +41,7 @@ def pose_update(prev_pose,tick_difference,ticks_to_meter,width_robo,scanner_disp
         #calulating the center about which the curving happens 
 		centerx=x-(R+width_robo/2)*sin(theta)
 		centery=y+(R+width_robo/2)*cos(theta)
-		theta+=alpha
+		theta=(theta + alpha + pi) % (2*pi) - pi
 		
 		#updating the x and using newly calualted theta value 
 		x=centerx+(R+width_robo/2)*sin(theta)+scanner_displacement*sin(theta)
@@ -73,14 +73,9 @@ def main():
     
     #hardware parameters 
 
-    parameters_table = dict()
-    with open(r'params.yaml') as file:
-            parameters_table = yaml.load(file, Loader=yaml.FullLoader)
-
-    
-    ticks_to_meter = parameters_table['ticks_to_meter'] #in mm per tick
-    width_robo = parameters_table['width_robo']  #in mm
-    scanner_displacement = parameters_table['scanner_displacement']  #in mm
+    ticks_to_meter = rospy.get_param("ticks_to_meter") #in mm per tick
+    width_robo = rospy.get_param("robot_width")  #in mm
+    scanner_displacement = rospy.get_param("scanner_displacement")   #in mm
     
     
     #begining pose estimation
