@@ -114,7 +114,7 @@ def main():
   while not rospy.is_shutdown():
     
     #Sent commanded velocity to Arduino
-    output_string = "<" + str(int(left_speed)) + "," + str(int(right_speed)) + ">"
+    output_string = "<" + str(int(left_speed*100)) + "," + str(int(right_speed*100)) + ">"
     print(output_string)
     ser.reset_output_buffer()
     ser.write(output_string.encode('utf-8'))
