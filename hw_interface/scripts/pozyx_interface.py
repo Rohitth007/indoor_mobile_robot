@@ -74,7 +74,7 @@ def main():
   waitForArduino()
   
   print('pozyx_interface node running')
-  pub_position = rospy.Publisher("/position",Twist, queue_size = 1)
+  pub_position = rospy.Publisher("/pozyx_position",Twist, queue_size = 1)
  
   rate = rospy.Rate(2) #2Hz
   while not rospy.is_shutdown():
@@ -91,6 +91,9 @@ def main():
     pos.linear.x = position[0]
     pos.linear.y = position[1]
     pos.linear.z = position[2]
+    pos.angular.x = position[3];
+    pos.angular.x = position[4];
+    pos.angular.x = position[5];
     
     pub_position.publish(pos)
 
