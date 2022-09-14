@@ -74,7 +74,7 @@ def split(points_xy, thereshold):
 
 def make_marker(points):
     marker = Marker()
-    marker.header.frame_id = "world"
+    marker.header.frame_id = "laser"
     marker.type = marker.LINE_LIST
     marker.action = marker.MODIFY
 
@@ -218,32 +218,50 @@ def callback(data):
     #print(angles)
     params_clean,points,end_points_list = split_and_merge(ranges, angles)
     
-    #print(end_points_list)
-    #print(" ")
-    #print(params_clean)
+    radius=[]
+    alpha=[]
+    endpoints_x=[]
+    endpoints_y=[]
+
+    for e in params_clean:
+        radius.append(e[0])
+        alpha.append(e[1])
+    
+    for e in end_points_list:
+        endpoints_x.append(e[0])
+        endpoints_y.append(e[1])
+
 
     marker=make_marker(points)
     data_to_send = features()  # the data to be sent, initialise the array
     num_lines=(points.shape[0])/2
  
     #print(num_lines)
+    #print(params_clean)
+    #print(end_points_list)
 
-    if(isinstance(num_lines, int)):
-        data_to_send.num_lines = points.shape[0]/2 # assign the array with the value you want to send
-    data_to_send.radius_values=params_clean
-    #data_to_send.endpoints=end_points_list
-    data_to_send.alpha_values=params_clean#params_clean[:,1]
-    pub.publish(data_to_send)
+    
+    data_to_send.num_lines = int(points.shape[0]/2) # assign the array with the value you want to send
+    
+    data_to_send.radius_values=radius
+    
+    data_to_send.endpoints_x=endpoints_x
+
+    data_to_send.endpoints_y=endpoints_y
+
+    data_to_send.alpha_values=alpha
+
+    #pub.publish(data_to_send)
     #rospy.loginfo("Hi")
 
-    #pub.publish(marker)
+    pub.publish(marker)
 
 
 if __name__== "__main__":
    
     rospy.init_node('feature_from_lidar')
-    #pub = rospy.Publisher('visualization_msgs/MarkerArray',Marker,queue_size=10)
-    pub = rospy.Publisher('line_features', features, queue_size=10)
+    pub = rospy.Publisher('visualization_msgs/MarkerArray',Marker,queue_size=10)
+    #pub = rospy.Publisher('line_features', features, queue_size=10)
     print("starting scan analysis")
     rate=rospy.Rate(10)
     rospy.Subscriber("scan", LaserScan, callback)
