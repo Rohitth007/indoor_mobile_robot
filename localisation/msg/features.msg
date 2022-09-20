@@ -1,7 +1,6 @@
-Header header
-
-pair_array[] endpoints
-pair_array[] radius_values
-pair_array[] alpha_values
+float32[] endpoints_x
+float32[] endpoints_y
+float32[] radius_values
+float32[] alpha_values
 int64 num_lines
 

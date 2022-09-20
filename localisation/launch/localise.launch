@@ -1,12 +1,24 @@
 <launch>
+<<<<<<< HEAD
  <node pkg="localisation" type="pose_estimation_final.py" name="pose_update"/>
  <!--node pkg="localisation" type="line_extract_node.py" name="feature_from_lidar"/-->
  
+=======
+ <!--node pkg="localisation" type="pose_estimation.py" name="odom_node"/-->
+ <!--node pkg="localisation" type="line_extract_node.py" name="feature_from_lidar"/-->
+ <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_laser" args="0 0 0 0 0 0 1 base_link laser" />
+
+  
+>>>>>>> 66f1c6d6c178b4ac0eef25fc0d0175fb8f49468a
  <!-- Params -->
  <param name="ticks_to_meter" value="1.83908" type="double"/><!--mm-per-tick-->
  <param name="robot_width" value="475" type="double"/> <!-- mm -->
  <param name="wheel_radius" value="37" type="double"/> <!-- mm -->
  <param name="scanner_displacement" value="0" type="double"/> <!-- mm -->
+ <param name="control_motion_factor" value="0.35" type="double"/>
+ <param name="control_turn_factor" value="0.65" type="double"/>
+ <param name="measurement_distance_stddev" value="200" type="double"/>
+ <param name="measurement_angle_stddev" value="0.2617" type="double"/>
  
  <!-- Record -->
  <!--node name="bag_record_laser_scan" pkg="rosbag" type="record"

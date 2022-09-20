@@ -55,11 +55,10 @@ add_message_files(
 )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+   FILES
+   odom_reset.srv
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -154,7 +153,7 @@ include_directories(
 #############
 ## Install ##
 #############
-catkin_install_python(PROGRAMS scripts/pose_estimation_final.py scripts/line_extract_node.py scripts/pose_sub.py
+catkin_install_python(PROGRAMS scripts/pose_estimation.py scripts/line_extract_node.py 
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 # all install targets should use catkin DESTINATION variables

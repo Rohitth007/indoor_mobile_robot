@@ -1,1 +1,1 @@
-float32[2] data
+float32[] control_covariance
