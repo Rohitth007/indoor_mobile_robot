@@ -15,7 +15,7 @@ endMarker = 62 #Unicode code for >
 #To store information from ROS callback
 left_speed = 0
 right_speed = 0
-
+max_speed = 4
 #Robot physical parms
 wheel_radius = 37.0 #mm
 robot_width = 475.0 #mm
@@ -80,17 +80,32 @@ def convert_vel_cmd(msg):
   #Function to convert linear and angular velocity request to 
   #left and right wheel velocities
 
-  global wheel_radius, robot_width, left_speed, right_speed
+  global wheel_radius, robot_width, left_speed, right_speed, max_speed
 
   cmd_linear_vel = msg.linear.x*1000.0 # in mm/sec
   cmd_angular_vel = msg.angular.z # in rad/sec
 
-  right_speed = ((2.0*cmd_linear_vel) + (cmd_angular_vel*robot_width))/(2*wheel_radius) #in rad/sec
-  left_speed = ((2.0*cmd_linear_vel) - (cmd_angular_vel*robot_width))/(2*wheel_radius) #in rad/sec
+  r_speed = ((2.0*cmd_linear_vel) + (cmd_angular_vel*robot_width))/(2*wheel_radius) #in rad/sec
+  l_speed = ((2.0*cmd_linear_vel) - (cmd_angular_vel*robot_width))/(2*wheel_radius) #in rad/sec
   
-  right_speed = right_speed/(2*3.14) #in revolutions per second
-  left_speed = left_speed/(2*3.14) #in revolutions per second
-
+  r_speed = r_speed/(2*3.14) #in revolutions per second
+  l_speed = l_speed/(2*3.14) #in revolutions per second
+   
+  vel_rl_max = max(r_speed,l_speed)
+  vel_rl_min = min(r_speed,l_speed)
+  
+  if cmd_linear_vel != 0 and cmd_angular_vel != 0: 
+  
+  	if vel_rl_max > max_speed:
+  		r_speed = r_speed - (vel_rl_max - max_speed)
+  		l_speed = l_speed - (vel_rl_max - max_speed)
+  	elif vel_rl_min < -max_speed:
+  		r_speed = r_speed - (vel_rl_min + max_speed)
+  		l_speed = l_speed - (vel_rl_min + max_speed)
+  				
+  
+  right_speed = r_speed
+  left_speed = l_speed 	
   return
 
 #============================
