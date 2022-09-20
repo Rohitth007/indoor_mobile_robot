@@ -1,6 +1,6 @@
 <launch>
- <!--node pkg="localisation" type="pose_estimation.py" name="pose_update"/-->
- <node pkg="localisation" type="line_extract_node.py" name="feature_from_lidar"/>
+ <node pkg="localisation" type="pose_estimation_final.py" name="pose_update"/>
+ <!--node pkg="localisation" type="line_extract_node.py" name="feature_from_lidar"/-->
  
  <!-- Params -->
  <param name="ticks_to_meter" value="1.83908" type="double"/><!--mm-per-tick-->
