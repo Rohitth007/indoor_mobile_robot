@@ -3,7 +3,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Int64
 import serial
 import time
-
+import math
 #Open the serial connection to the Arduino - which causes the Arduino to reset
 ser = serial.Serial("/dev/ttyUSB0", 9600)
 
@@ -16,6 +16,7 @@ endMarker = 62 #Unicode code for >
 left_speed = 0
 right_speed = 0
 max_speed = 4
+min_speed = 0.5
 #Robot physical parms
 wheel_radius = 37.0 #mm
 robot_width = 475.0 #mm
@@ -80,7 +81,7 @@ def convert_vel_cmd(msg):
   #Function to convert linear and angular velocity request to 
   #left and right wheel velocities
 
-  global wheel_radius, robot_width, left_speed, right_speed, max_speed
+  global wheel_radius, robot_width, left_speed, right_speed, max_speed, min_speed
 
   cmd_linear_vel = msg.linear.x*1000.0 # in mm/sec
   cmd_angular_vel = msg.angular.z # in rad/sec
@@ -102,8 +103,19 @@ def convert_vel_cmd(msg):
   	elif vel_rl_min < -max_speed:
   		r_speed = r_speed - (vel_rl_min + max_speed)
   		l_speed = l_speed - (vel_rl_min + max_speed)
-  				
-  
+  	if abs(r_speed) < min_speed or abs(l_speed) < min_speed:	
+  		if abs(r_speed - l_speed) < 2*min_speed:
+  			r_speed = math.copysign(min_speed,r_speed)
+  			l_speed = math.copysign(min_speed,l_speed)				
+  		else:
+  			if abs(r_speed) < min_speed:
+  				speed_sign = math.copysign(min_speed,r_speed)
+  				l_speed = l_speed + (speed_sign - r_speed)
+  				r_speed = speed_sign 
+  			if abs(l_speed) < min_speed:
+  				speed_sign = math.copysign(min_speed,l_speed)
+  				r_speed = r_speed + (speed_sign - l_speed)
+  				l_speed = speed_sign 	
   right_speed = r_speed
   left_speed = l_speed 	
   return
