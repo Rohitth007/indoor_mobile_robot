@@ -2,12 +2,13 @@
 
 from xml.dom.expatbuilder import theDOMImplementation
 import rospy
-from nav_msgs.msg import Odometry
 from std_msgs.msg import Int64
 from math import sin, cos, pi, atan2, sqrt
 import tf
+from localisation.msg import *
 from geometry_msgs.msg import Point, Pose, Quaternion, Twist, Vector3
 from numpy import *
+from localisation.srv import odom_reset,odom_resetResponse
 
 #class to keep track of the ticks which arise from the motor encoders
 class ticks:
@@ -22,8 +23,59 @@ class posyx:
 
 Tick=ticks()
 Posyx =posyx()
+pose=(0,0,0)
+def get_jacobian_state(pose,control,robo_width):
+        theta = pose[2]
+        l, r = control
 
-def get_control_covariance(control,control_motion_factor,control_turn_factor):
+        if r != l:
+            alpha = (r - l) / robo_width
+            R = l / alpha
+            g1 = (R + (robo_width/ 2)) * (cos(theta + alpha) - cos(theta))
+            g2 = (R + (robo_width/ 2)) * (sin(theta + alpha) - sin(theta))
+            m = array([[1.0, 0.0, g1], [0.0, 1.0, g2], [0.0, 0.0, 1.0]])
+
+        else:
+
+            m = array([[1.0, 0.0, -l * sin(theta)], [0.0, 1.0, l * cos(theta)], [0.0, 0.0, 1.0]])
+
+        return m
+def get_jacobian_control(pose,control,robo_width):
+        theta = pose[2]
+        l, r = tuple(control)
+
+        if r != l:
+            alpha = (r - l) / (robo_width)
+
+            wr = ((robo_width) * r) / ((r - l) ** 2)
+            wl = ((robo_width) * l) / ((r - l) ** 2)
+            r2l = (r + l) / (2 * (r - l))
+
+            g1_l = wr * (sin(theta + alpha) - sin(theta)) - r2l * cos(theta + alpha)
+            g2_l = wr * (-cos(theta + alpha) + cos(theta)) - r2l * sin(theta + alpha)
+            g3_l = - ((1 / robo_width))
+
+            g1_r = -wl * (sin(theta + alpha) - sin(theta)) + r2l * cos(theta + alpha)
+            g2_r = -wl * (-cos(theta + alpha) + cos(theta)) + r2l * sin(theta + alpha)
+            g3_r = 1 / (robo_width)
+
+            m = array([[g1_l, g1_r], [g2_l, g2_r], [g3_l, g3_r]])
+
+        else:
+
+            # This is for the special case l == r.
+            g1_l = .5 * (cos(theta) + (l / robo_width) * sin(theta))
+            g2_l = .5 * (sin(theta) - (l / robo_width) * cos(theta))
+            g3_l = - 1 / (robo_width)
+
+            g1_r = .5 * (((-l / robo_width)) * sin(theta) + cos(theta))
+            g2_r = .5 * (((l /robo_width)) * cos(theta) + sin(theta))
+            g3_r = 1 / (robo_width)
+
+            m = array([[g1_l, g1_r], [g2_l, g2_r], [g3_l, g3_r]])
+
+        return m
+def get_covariance(covariance,current_pose,control,control_motion_factor,control_turn_factor,robot_width):
     
     left, right = control
 
@@ -32,17 +84,20 @@ def get_control_covariance(control,control_motion_factor,control_turn_factor):
 
     sigma_l = (alpha_1 * left) ** 2 + (alpha_2 * (left - right)) ** 2
     sigma_r = (alpha_1 * right) ** 2 + (alpha_2 * (left - right)) ** 2
-    control_covariance = [sigma_l, sigma_r]
+    control_covariance = diag([sigma_l, sigma_r])
+    G_t = get_jacobian_state(current_pose, control, robot_width)
+    V   =  get_jacobian_control(current_pose, control,robot_width)
 
-    return control_covariance
+    covariance = dot(G_t, dot(covariance, G_t.T)) + dot(V, dot(control_covariance, V.T))
+    return covariance
 
-def pose_update(prev_pose,tick_difference,ticks_to_meter,width_robo,scanner_displacement):
-	
+def pose_update(tick_difference,ticks_to_meter,width_robo,scanner_displacement):
+	global pose
 	#first case robot travels in straight line 
 	if tick_difference[0]==tick_difference[1]:
-		theta=prev_pose[2]
-		x=prev_pose[0]+tick_difference[0]*ticks_to_meter*cos(theta)
-		y=prev_pose[1]+tick_difference[1]*ticks_to_meter*sin(theta)
+		theta=pose[2]
+		x=pose[0]+tick_difference[0]*ticks_to_meter*cos(theta)
+		y=pose[1]+tick_difference[1]*ticks_to_meter*sin(theta)
 		
 		#returning the pose
 		return (x,y,theta)
@@ -52,9 +107,9 @@ def pose_update(prev_pose,tick_difference,ticks_to_meter,width_robo,scanner_disp
 	else:
 
 		#getting the previous parameters
-		theta=prev_pose[2]
-		x=prev_pose[0]-scanner_displacement*sin(theta)
-		y=prev_pose[1]-scanner_displacement*cos(theta)
+		theta=pose[2]
+		x=pose[0]-scanner_displacement*sin(theta)
+		y=pose[1]-scanner_displacement*cos(theta)
 		
 
 		alpha=ticks_to_meter*(tick_difference[1]-tick_difference[0])/width_robo
@@ -85,17 +140,27 @@ def callback_posyx(msg):
     global Posyx
     Posyx.x=msg.linear.x
     Posyx.y=msg.linear.y
-        
+
+def set_odometry(req):
+    global pose
+    pose=(req.x,req.y,req.theta)
+
+    return odom_resetResponse(True)
+
 def main():
     global Tick
     global Posyx
+    global pose
     #creating a publisher topic named pose and a node named pose_update 
-    odom_pub = rospy.Publisher("odom", Twist, queue_size=1)
+    odom_pub = rospy.Publisher("odom",odometry_custom, queue_size=1)
     odom_broadcaster = tf.TransformBroadcaster()
     lidar_broadcaster = tf.TransformBroadcaster()
     posyx_transform = tf.TransformBroadcaster()
 
     rospy.init_node('odom_node')
+
+
+    s = rospy.Service('reset_odometry', odom_reset, set_odometry)
 
 
     #initialising the rate variable to an appropriate rate 
@@ -112,7 +177,8 @@ def main():
     #begining pose estimation
     print("Starting Pose estimation")
 
-    pose= (0, 0 ,0)
+   
+    covariance = diag([100.0**2, 100.0**2, (10.0 / 180.0 * pi) ** 2])
 
     current_time = rospy.Time.now()
    
@@ -134,12 +200,14 @@ def main():
         
         control = array((tick_difference[0],tick_difference[1])) * ticks_to_meter
 
-    
-        pose =pose_update(pose,tick_difference,ticks_to_meter,width_robo,scanner_displacement)
-        
+        covariance = get_covariance(covariance,pose,control,control_motion_factor,control_turn_factor,width_robo)
+        pose =pose_update(tick_difference,ticks_to_meter,width_robo,scanner_displacement)
+        print("Pose")
+        print("   ")
         print(pose)
-
-        control_covariance = get_control_covariance(control,control_motion_factor,control_turn_factor)
+        print("Covariance")
+        print("   ")
+        print(covariance)
 
         X=pose[0]
         Y=pose[1]
@@ -153,14 +221,15 @@ def main():
         
 
 
-        odom_broadcaster.sendTransform((X/10**3, Y/10**3, 0),odom_quat,current_time,"/base_link","/odom")  
-        lidar_broadcaster.sendTransform((X/10**3, Y/10**3, 0),odom_quat,current_time,"/laser","/odom") 
-        posyx_transform.sendTransform((X_posyx/10**3,Y_posyx/10**3,0), odom_quat,current_time,"/posyx","/odom")
+        odom_broadcaster.sendTransform((X, Y, 0),odom_quat,current_time,"/base_link","/odom")  
+        lidar_broadcaster.sendTransform((X, Y, 0),odom_quat,current_time,"/laser","/odom") 
+        posyx_transform.sendTransform((X_posyx,Y_posyx,0), odom_quat,current_time,"/posyx","/odom")
 
-        odom = Twist()
-        odom.linear.x = X/10**3
-        odom.linear.y = Y/10**3
-        odom.angular.z = theta
+        odom = odometry_custom()
+        odom.x = X
+        odom.y = Y
+        odom.theta = theta
+        odom.covariance=covariance.flatten()
         
         # publish the message
         odom_pub.publish(odom)

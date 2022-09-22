@@ -251,17 +251,17 @@ def callback(data):
 
     data_to_send.alpha_values=alpha
 
-    #pub.publish(data_to_send)
+    pub.publish(data_to_send)
     #rospy.loginfo("Hi")
 
-    pub.publish(marker)
+    #pub.publish(marker)
 
 
 if __name__== "__main__":
    
     rospy.init_node('feature_from_lidar')
-    pub = rospy.Publisher('visualization_msgs/MarkerArray',Marker,queue_size=10)
-    #pub = rospy.Publisher('line_features', features, queue_size=10)
+    #pub = rospy.Publisher('visualization_msgs/MarkerArray',Marker,queue_size=10)
+    pub = rospy.Publisher('line_features', features, queue_size=10)
     print("starting scan analysis")
     rate=rospy.Rate(10)
     rospy.Subscriber("scan", LaserScan, callback)
