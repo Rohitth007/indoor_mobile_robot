@@ -20,8 +20,9 @@ class ExtendedKalmanFilter():
     result=[]
 
     @staticmethod
-    #fucntion which relates between the stae and th reference walls 
+    #fucntion which relates between the state and th reference walls 
     def h(state, landmark, scanner_displacement):
+        #finding the r, theta of the wall withrespect to the lidar
         dx = landmark[0] - (state[0] + scanner_displacement * cos(state[2]))
         dy = landmark[1] - (state[1] + scanner_displacement * sin(state[2]))
         r = sqrt(dx * dx + dy * dy)
@@ -32,23 +33,30 @@ class ExtendedKalmanFilter():
     @staticmethod
     #function to return the covariance detected parameters of the wall 
     def get_covariance(p1,p2,m_radius,m_angle):
+
+        
         pho_1 = p1[0]**2+p1[1]**2
         theta_1= atan2(p1[1],p1[0])
 
+        
         pho_2 = p2[0]**2+p2[1]**2
         theta_2= atan2(p2[0],p2[1])
 
+
+        #covariance matrix for each of the two points used for estimaing walls
         covariance_x =diag[m_radius,m_radius,m_angle,m_angle]
 
         c=-((pho_1-pho_2)/2)*sin((theta_1-theta_2)/2)
         Fpq = array[[0,0,1/2,1/2],[cos((theta_1-theta_2)/2),-cos((theta_1-theta_2)/2),c,-c]]
+
+        #converting the covarince to the final covariance estimate
         covariance_ar=dot(Fpq, dot(covariance_x, Fpq.T))
 
         return covariance_ar
 
 
     @staticmethod
-    #fucntion to calculate the jacobina of the measurement with respect to teh state 
+    #fucntion to calculate the jacobian of the measurement with respect to the state 
     def dh_dstate(state, landmark, scanner_displacement):
 
         x, y, theta = state
@@ -85,7 +93,7 @@ class ExtendedKalmanFilter():
         best_dist = self.threshold
         best_r = None
 
-        #looping acroos the detected landmarks and refernce land marks to detec the best corellations 
+        #looping acroos the detected landmarks and refernce land marks to detect the best corellations 
         for i in range(len(r_values)):
             endpoint_x_begin = endpoints_x[2*i][0]
             endpoint_y_begin = wall_begin_points[2*i][1]
@@ -104,7 +112,7 @@ class ExtendedKalmanFilter():
                 endpoint_x_end_wall = wall_end_points[j][0]
                 endpoint_y_end_wall = wall_end_points[j][1]
 
-                #set of conditions to ensure that the detec walls lie within the refernce walls 
+                #set of conditions to ensure that the detected walls lie within the refernce walls 
                 condition1 = endpoint_x_begin_wall<=endpoint_x_begin and endpoint_x_begin_wall<endpoint_x_end 
                 condition2 = endpoint_x_end_wall>endpoint_x_begin and endpoint_x_end_wall>=endpoint_x_end 
     
@@ -122,9 +130,9 @@ class ExtendedKalmanFilter():
             if best_r:
                 self.result.append(r_values[i],alpha_values[j],endpoint_b,endpoint_e,best_r,best_alpha)
         
-        #using the list created to perform coreection the predicted estimat of the robots pose
+        #using the list created to perform correction on the predicted estimate of the robots pose
         for ele in result:
-            landmark=(ele[0]*cos(ele[1]),ele[0]*sin(ele[1]))
+            landmark=(ele[4]*cos(ele[5]),ele[4]*sin(ele[5]))
 
             #covarinace update and kalman gain calculation
             H_t = self.dh_dstate(self.state, landmark,self.scanner_displacement)
@@ -135,6 +143,7 @@ class ExtendedKalmanFilter():
             innovation = array(ele[0],ele[1]) - self.h(self.state, landmark, self.scanner_displacement)
             innovation[1] = (innovation[1] + pi) % (2*pi) - pi
 
+            #updating the state and covariance
             self.state += dot(K_t, innovation)  
 
             self.covariance = dot(eye(3) - dot(K_t, H_t), self.covariance)
@@ -198,7 +207,7 @@ def cartesian_to_polar(X,Y):
     r,alpha=radius_negative_conversion(r,alpha)
     return r,alpha
 
-#functin to convert the map values from cartesina to polar coordiantes 
+#function to convert the map values from cartesian to polar coordiantes 
 def map_convert_to_polar(map):
     wall_begin_points=map["wall_begin_points"]
     wall_end_points=map["wall_end_points"]
@@ -217,7 +226,7 @@ def map_convert_to_polar(map):
     return r_values,alpha_values
 
 def pred_update_callback(msg):
-    #function to perform the prediction updat step by using the messge from odom node
+    #function to perform the prediction update step by using the messge from odom node
     global ekf
     ekf.state =array[msg.x,msg.y,msg.theta]
     ekf.covariance=msg.covariance
