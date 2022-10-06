@@ -72,7 +72,7 @@ def turn_off():
   print('hw_interface node turning off')
   ser.write("<0,0>".encode('utf-8'))
   time.sleep(3)
-  ser.close
+  ser.close()
   return
 
 #===========================

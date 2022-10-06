@@ -61,7 +61,7 @@ def turn_off():
   
   print('pozyx_interface node turning off')
   time.sleep(3)
-  ser.close
+  ser.close()
   return
 
 #===========================    	
@@ -90,10 +90,10 @@ def main():
     position = [int(x) for x in recieved_position_data.split(',')]
     pos.linear.x = position[0]
     pos.linear.y = position[1]
-    pos.linear.z = position[2]
-    pos.angular.z = position[3]
-    pos.angular.y = position[4]
-    pos.angular.x = position[5]
+    pos.angular.z = position[2]
+    #pos.angular.z = position[3]
+    #pos.angular.y = position[4]
+    #pos.angular.x = position[5]
     
     pub_position.publish(pos)
 

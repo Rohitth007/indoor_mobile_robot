@@ -188,7 +188,7 @@ def main():
         
         rospy.Subscriber('/left_ticks', Int64, callback_left)
         rospy.Subscriber('/right_ticks', Int64, callback_right)
-        rospy.Subscriber("/position",Twist,callback_posyx)
+        rospy.Subscriber("/pozyx_position",Twist,callback_posyx)
 
         tick_difference=[0,0]
 

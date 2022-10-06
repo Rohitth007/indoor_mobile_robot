@@ -61,7 +61,7 @@ int main(int argc, char **argv)
   //Create subscriber for topic "diagnostic"
   ros::Subscriber diag_sub = nh.subscribe("diagnostics", 10, &node_helper::diag_Callback, &joy_helper);
 
-  ros::Rate loop_rate(1);
+  ros::Rate loop_rate(10);
 
   while (ros::ok())
   {

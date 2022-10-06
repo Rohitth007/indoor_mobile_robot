@@ -1,19 +1,11 @@
 <launch>
-<<<<<<< HEAD
+
  <node pkg="localisation" type="pose_estimation.py" name="odom_node"/>
-=======
-<<<<<<< HEAD
- <node pkg="localisation" type="pose_estimation_final.py" name="pose_update"/>
- <!--node pkg="localisation" type="line_extract_node.py" name="feature_from_lidar"/-->
- 
-=======
- <!--node pkg="localisation" type="pose_estimation.py" name="odom_node"/-->
->>>>>>> 5955a40d2a116c4df7fa4139d035d3aae2eeea8f
  <!--node pkg="localisation" type="line_extract_node.py" name="feature_from_lidar"/-->
  <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_laser" args="0 0 0 0 0 0 1 base_link laser" />
 
   
->>>>>>> 66f1c6d6c178b4ac0eef25fc0d0175fb8f49468a
+
  <!-- Params -->
  <rosparam file="$(find localisation)/maps/map.yaml" />
  <param name="ticks_to_meter" value="1.83908" type="double"/><!--mm-per-tick-->
