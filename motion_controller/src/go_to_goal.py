@@ -32,16 +32,19 @@ def update_pose(msg):
 
     global RPose
 
-    RPose.x = msg.x
-    RPose.y = msg.y
-    RPose.theta = msg.theta
+    #RPose.x = msg.x
+    #RPose.y = msg.y
+    RPose.theta = msg.angular.z
 
 def get_distance(x1,y1,x2,y2):
     return math.sqrt((x2-x1)**2+(y2-y1)**2)
 
+  
 def main():
 
     global RPose,GPose,vControl,wControl
+    
+    rospy.init_node('go_to_goal_node')
     
     #Takes the user input
     if len(sys.argv) == 4:
@@ -59,7 +62,7 @@ def main():
     control_pub = rospy.Publisher("cmd/vel",Twist,queue_size=1)
 
     #Subscriber to listen to the topic "pose"
-    rospy.Subscriber('odom',odometry_custom,update_pose) 
+    rospy.Subscriber('/pozyx_position',odometry_custom,update_pose) 
 
     control_msg = Twist()
     rate = rospy.Rate(1)
@@ -68,12 +71,19 @@ def main():
     goal_y = GPose.y
     goal_theta = GPose.theta
 
-    while not rospy.is_shutdown:
+    while not rospy.is_shutdown():
 
         robot_x = RPose.x
         robot_y = RPose.y
         robot_theta = RPose.theta
-
+        
+        if(math.abs(goal_theta-robot_theta) >= params["angular_threshold"]):
+                control_msg.angular.z = wControl.Kp*(goal_theta-robot_theta)
+            else:
+                control_msg.angular.z = 0
+                return 
+                
+	"""
         if(get_distance(robot_x,robot_y,goal_x,goal_y) >= params["distance_threshold"]):
 
             control_msg.linear.x = vControl.Kp*get_distance(robot_x,robot_y,goal_x,goal_y)
@@ -81,10 +91,7 @@ def main():
             theta_error  = math.atan2((goal_y-robot_y),(goal_x-robot_x)) - robot_theta
             theta_error = (theta_error+math.pi)%(2*math.pi) - math.pi
 
-            if(math.abs(theta_error) >= params["angular_threshold"]):        
-                control_msg.angular.z = wControl.Kp*(theta_error)
-            else:
-                control_msg.angular.z = 0
+            
         
         else:
             
@@ -94,9 +101,9 @@ def main():
                 control_msg.angular.z = wControl.Kp*(goal_theta-robot_theta)
             else:
                 control_msg.angular.z = 0 
-
+	"""
         control_pub.publish(control_msg)
-        rate.sleep
+        rate.sleep()
 
 
 if __name__ == "__main__":
