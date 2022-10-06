@@ -4,12 +4,13 @@ import sys
 import rospy
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64
+from motion_controller.msg import odometry_custom
 import math
 import yaml
 
 #Control Class
 class Control:
-    Kp = 0
+    Kp = 1.0
     Ki = 0
     Kd = 0
 
@@ -29,11 +30,11 @@ wControl = Control()
 #Function to update robot pose
 def update_pose(msg):
 
-    global Rpose
+    global RPose
 
-    Rpose.x = msg.linear.x
-    Rpose.y = msg.linear.y
-    Rpose.theta = msg.angular.z
+    RPose.x = msg.x
+    RPose.y = msg.y
+    RPose.theta = msg.theta
 
 def get_distance(x1,y1,x2,y2):
     return math.sqrt((x2-x1)**2+(y2-y1)**2)
@@ -58,7 +59,7 @@ def main():
     control_pub = rospy.Publisher("cmd/vel",Twist,queue_size=1)
 
     #Subscriber to listen to the topic "pose"
-    rospy.Subscriber('pose',Twist,update_pose) 
+    rospy.Subscriber('odom',odometry_custom,update_pose) 
 
     control_msg = Twist()
     rate = rospy.Rate(1)
@@ -68,17 +69,32 @@ def main():
     goal_theta = GPose.theta
 
     while not rospy.is_shutdown:
+
         robot_x = RPose.x
         robot_y = RPose.y
         robot_theta = RPose.theta
+
         if(get_distance(robot_x,robot_y,goal_x,goal_y) >= params["distance_threshold"]):
+
             control_msg.linear.x = vControl.Kp*get_distance(robot_x,robot_y,goal_x,goal_y)
+
+            theta_error  = math.atan2((goal_y-robot_y),(goal_x-robot_x)) - robot_theta
+            theta_error = (theta_error+math.pi)%(2*math.pi) - math.pi
+
+            if(math.abs(theta_error) >= params["angular_threshold"]):        
+                control_msg.angular.z = wControl.Kp*(theta_error)
+            else:
+                control_msg.angular.z = 0
+        
         else:
+            
             control_msg.linear.x = 0
-        if(math.abs(robot_theta-goal_theta) >= params["angular_threshold"]):        
-            control_msg.angular.z = wControl.Kp*(robot_theta-goal_theta)
-        else:
-            control_msg.angular.z = 0
+            
+            if(math.abs(goal_theta-robot_theta) >= params["angular_threshold"]):
+                control_msg.angular.z = wControl.Kp*(goal_theta-robot_theta)
+            else:
+                control_msg.angular.z = 0 
+
         control_pub.publish(control_msg)
         rate.sleep
 
