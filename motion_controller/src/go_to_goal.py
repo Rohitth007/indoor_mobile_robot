@@ -3,10 +3,7 @@
 import sys
 import rospy
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Float64
-from motion_controller.msg import odometry_custom
 import math
-import yaml
 
 #Control Class
 class Control:
@@ -29,11 +26,9 @@ wControl = Control()
 
 #Function to update robot pose
 def update_pose(msg):
-
     global RPose
-
-    #RPose.x = msg.x
-    #RPose.y = msg.y
+    RPose.x = msg.linear.x
+    RPose.y = msg.linear.y
     RPose.theta = msg.angular.z
 
 def get_distance(x1,y1,x2,y2):
@@ -45,7 +40,10 @@ def main():
     global RPose,GPose,vControl,wControl
     
     rospy.init_node('go_to_goal_node')
+    rate = rospy.Rate(1)
     
+    control_msg = Twist()
+
     #Takes the user input
     if len(sys.argv) == 4:
         GPose.x = float(sys.argv[1])
@@ -55,60 +53,69 @@ def main():
         print ("%s [x y theta]"%sys.argv[0])
         sys.exit(1)
 
-    params = dict()
-    with open(r'threshold_params.yaml') as file:
-            params = yaml.load(file, Loader=yaml.FullLoader)
-
+    #Loading the parameters
+    dist_error_threshold = rospy.get_param("dist_error_threshold")
+    distance_threshold = rospy.get_param("distance_threshold")
+    angular_threshold = rospy.get_param("angular_threshold")
+    ep_angle_error_threshold = rospy.get_param("ep_angle_error_threshold")
+    
+    #Publisher to publish to the topic "cmd/vel"
     control_pub = rospy.Publisher("cmd/vel",Twist,queue_size=1)
 
-    #Subscriber to listen to the topic "pose"
-    rospy.Subscriber('/pozyx_position',odometry_custom,update_pose) 
-
-    control_msg = Twist()
-    rate = rospy.Rate(1)
+    #Subscriber to listen to the topic "pozyx_position"
+    rospy.Subscriber('/pozyx_position',Twist,update_pose) 
 
     goal_x = GPose.x
     goal_y = GPose.y
     goal_theta = GPose.theta
+
+    prev_distance_error = get_distance(goal_x,goal_y,0,0)
 
     while not rospy.is_shutdown():
 
         robot_x = RPose.x
         robot_y = RPose.y
         robot_theta = RPose.theta
+
+        #Calculating the error in the angle of heading
+        theta_error  = math.atan2((goal_y-robot_y),(goal_x-robot_x)) - robot_theta
+        theta_error = (theta_error+math.pi)%(2*math.pi) - math.pi 
+
+        #The distance error
+        distance_error = get_distance(robot_x,robot_y,goal_x,goal_y)
+
+        #Filtering for any large changes in the error
+        if(abs(prev_distance_error-distance_error) > dist_error_threshold):
+            distance_error = prev_distance_error       
         
-        if(math.abs(goal_theta-robot_theta) >= params["angular_threshold"]):
+        #Aligning the angle of travel and varying the angular velocity
+        if(abs(theta_error) >= angular_threshold and distance_error >= distance_threshold):
+            control_msg.angular.z = wControl.Kp*(theta_error)
+        else:
+            control_msg.angular.z = 0  
+
+        #Varying the linear velocity
+        if(distance_error >= distance_threshold):
+            control_msg.linear.x = vControl.Kp*get_distance(robot_x,robot_y,goal_x,goal_y)
+        else:
+            control_msg.linear.x = 0
+            #Turning the robot to align in the desired orientation    
+            if(math.abs(goal_theta-robot_theta) >= ep_angle_error_threshold):
                 control_msg.angular.z = wControl.Kp*(goal_theta-robot_theta)
             else:
                 control_msg.angular.z = 0
-                return 
-                
-	"""
-        if(get_distance(robot_x,robot_y,goal_x,goal_y) >= params["distance_threshold"]):
-
-            control_msg.linear.x = vControl.Kp*get_distance(robot_x,robot_y,goal_x,goal_y)
-
-            theta_error  = math.atan2((goal_y-robot_y),(goal_x-robot_x)) - robot_theta
-            theta_error = (theta_error+math.pi)%(2*math.pi) - math.pi
-
-            
-        
-        else:
-            
-            control_msg.linear.x = 0
-            
-            if(math.abs(goal_theta-robot_theta) >= params["angular_threshold"]):
-                control_msg.angular.z = wControl.Kp*(goal_theta-robot_theta)
-            else:
-                control_msg.angular.z = 0 
-	"""
+                return  
+	
         control_pub.publish(control_msg)
         rate.sleep()
+        
+        prev_distance_error = distance_error
 
 
 if __name__ == "__main__":
     try:
         main()
+        print("Program Ended")
     except rospy.ROSInterruptException:
         pass    
 
