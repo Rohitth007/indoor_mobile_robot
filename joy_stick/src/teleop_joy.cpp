@@ -31,7 +31,7 @@ struct node_helper
     axis_linear = 1;
     axis_angular = 0;
     scale_linear = 1.0;
-    scale_angular = 0.5;
+    scale_angular = 0.35;
     cmd_vel.angular.z = 0.0;
     cmd_vel.linear.x = 0.0;
   }

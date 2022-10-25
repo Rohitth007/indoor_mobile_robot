@@ -10,7 +10,7 @@
 #define LH_PWM 5
 #define LH_DIR 4
 
-#define GR 19.2 // Gear Ratio
+#define GR 50.9 // Gear Ratio
 #define PPR 7.0 // Pulse Per Revolution
 
 #define MIN_PWM 25

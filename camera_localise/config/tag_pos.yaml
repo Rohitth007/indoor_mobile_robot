@@ -1,0 +1,9 @@
+# Defining tag positions
+# position in (x,y,z) format and quaternion value in quat
+
+---
+standalone_tags:
+  [{id: 0,x: 1.099,y: 1.604,z: 0.320, ex: 1.5708,ey: 0.0,ez: 3.1415},{id: 1,x: 1.195,y: 13.435,z: 0.320, ex: 1.5708,ey: 0.0,ez: 1.5708},{id: 2,x: 12.800,y: 13.265,z: 0.372, ex: 1.5708,ey: 0.0,ez: 0.0},{id: 3,x: 12.612,y: 1.450,z: 0.320, ex: 1.5708,ey: 0,ez: -1.5708}
+  ]
+...
+

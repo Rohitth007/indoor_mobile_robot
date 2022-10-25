@@ -17,8 +17,8 @@
   <!-- Params -->
   <param name="axis_linear" value="1" type="int"/>
   <param name="axis_angular" value="0" type="int"/>
-  <param name="scale_linear" value="0.25" type="double"/> <!-- meter per second-->
-  <param name="scale_angular" value="1.20" type="double"/> <!-- radians per second-->
+  <param name="scale_linear" value="0.5" type="double"/> <!-- meter per second-->
+  <param name="scale_angular" value="0.75" type="double"/> <!-- radians per second-->
   <param name="robot_width" value="475" type="int"/> <!-- mm -->
   <param name="wheel_radius" value="37" type="int"/> <!-- mm -->
 

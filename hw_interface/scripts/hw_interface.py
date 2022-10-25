@@ -5,7 +5,7 @@ import serial
 import time
 import math
 #Open the serial connection to the Arduino - which causes the Arduino to reset
-ser = serial.Serial("/dev/ttyUSB0", 9600)
+ser = serial.Serial("/dev/ttyUSB1", 9600)
 
 #For communication the message to be sent to the Arduino starts with startmarker '<' and ends with endmarker '>'
 #the message content comprises desired left motor speed as integer and desired right motor speed as integer
@@ -137,7 +137,7 @@ def main():
   wheel_radius = rospy.get_param('wheel_radius', 37)
   robot_width = rospy.get_param('robot_width', 475)
 
-  rate = rospy.Rate(2) #2Hz
+  rate = rospy.Rate(4) #2Hz
   while not rospy.is_shutdown():
     
     #Sent commanded velocity to Arduino
