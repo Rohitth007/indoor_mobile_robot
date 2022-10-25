@@ -12,7 +12,7 @@
   <!-- Hardware interface node -->
   <node pkg="hw_interface" type="hw_interface.py" name="hw_interface_node"/>
   <node pkg="hw_interface" type="pozyx_interface.py" name="pozyx_interface_node"/>
-  
+  <!-- node pkg="motion_controller" type="go_to_goal.py" name="go_to_goal_node"-->
   
   <!-- Params -->
   <param name="axis_linear" value="1" type="int"/>
@@ -21,5 +21,8 @@
   <param name="scale_angular" value="0.75" type="double"/> <!-- radians per second-->
   <param name="robot_width" value="475" type="int"/> <!-- mm -->
   <param name="wheel_radius" value="37" type="int"/> <!-- mm -->
-
+  <param name="distance_threshold" value="0.5" type="double"/> <!-- m -->
+  <param name="dist_error_threshold" value="50" type="int"/> <!-- m -->
+  <param name="angular_threshold" value="0.1" type="double"/> <!-- radian -->
+  <param name="ep_angle_error_threshold" value="0.1" type="double"/> <!-- radian -->
 </launch>
