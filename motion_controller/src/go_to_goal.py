@@ -40,7 +40,7 @@ def main():
     global RPose,GPose,vControl,wControl
     
     rospy.init_node('go_to_goal_node')
-    rate = rospy.Rate(1)
+    rate = rospy.Rate(0.25)
     
     control_msg = Twist()
 
@@ -60,7 +60,7 @@ def main():
     ep_angle_error_threshold = rospy.get_param("ep_angle_error_threshold")
     
     #Publisher to publish to the topic "cmd/vel"
-    control_pub = rospy.Publisher("cmd/vel",Twist,queue_size=1)
+    control_pub = rospy.Publisher("/cmd_vel",Twist,queue_size=1)
 
     #Subscriber to listen to the topic "pozyx_position"
     rospy.Subscriber('/pozyx_position',Twist,update_pose) 
