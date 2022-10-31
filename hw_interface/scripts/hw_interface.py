@@ -5,7 +5,7 @@ import serial
 import time
 import math
 #Open the serial connection to the Arduino - which causes the Arduino to reset
-ser = serial.Serial("/dev/ttyUSB1", 9600)
+ser = serial.Serial("/dev/ttyUSB0", 9600)
 
 #For communication the message to be sent to the Arduino starts with startmarker '<' and ends with endmarker '>'
 #the message content comprises desired left motor speed as integer and desired right motor speed as integer

@@ -6,14 +6,19 @@
 
 struct node_helper
 {
-  int axis_linear, axis_angular;
+  int axis_linear, axis_angular,axis_autonomous;
   double scale_linear, scale_angular;
+  bool isAutonomous = false;
   geometry_msgs::Twist cmd_vel;
 
   void joy_Callback(const sensor_msgs::Joy::ConstPtr &joy)
   {
     cmd_vel.angular.z = scale_angular * joy->axes[axis_angular];
     cmd_vel.linear.x = scale_linear * joy->axes[axis_linear];
+    if(joy->axes[axis_autonomous] == -1)
+    	isAutonomous = true;
+    else
+    	isAutonomous = false;	
   }
 
   void diag_Callback(const diagnostic_msgs::DiagnosticArray::ConstPtr &diag)
@@ -22,6 +27,7 @@ struct node_helper
     if(msg == "Joystick not open."){
          cmd_vel.angular.z = 0;
          cmd_vel.linear.x = 0;
+         isAutonomous = false;
     }
   }
 
@@ -30,6 +36,7 @@ struct node_helper
   {
     axis_linear = 1;
     axis_angular = 0;
+    axis_autonomous = 5;
     scale_linear = 1.0;
     scale_angular = 0.35;
     cmd_vel.angular.z = 0.0;
@@ -66,7 +73,8 @@ int main(int argc, char **argv)
   while (ros::ok())
   {
     ros::spinOnce();
-    vel_pub.publish(joy_helper.cmd_vel);
+    if(!joy_helper.isAutonomous)
+    	vel_pub.publish(joy_helper.cmd_vel);
     loop_rate.sleep();
   }
   std::cout << "shutting down teleop_joy node\n";

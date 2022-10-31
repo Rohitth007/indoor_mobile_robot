@@ -69,14 +69,14 @@ def main():
   global ser, pos 
 
   #Initialising             
-  rospy.init_node('pozyx_interface')
+  rospy.init_node('pozyx_interface_node')
   rospy.on_shutdown(turn_off)
   waitForArduino()
   
   print('pozyx_interface node running')
   pub_position = rospy.Publisher("/pozyx_position",Twist, queue_size = 1)
  
-  rate = rospy.Rate(2) #2Hz
+  rate = rospy.Rate(20) #20Hz
   while not rospy.is_shutdown():
    
     #Update ticks info from arduino
@@ -91,11 +91,12 @@ def main():
     pos.linear.x = position[0]
     pos.linear.y = position[1]
     pos.angular.z = position[2]
+    if pos.linear.x < 1e5 or pos.linear.y < 1e5:
     #pos.angular.z = position[3]
     #pos.angular.y = position[4]
     #pos.angular.x = position[5]
-    
-    pub_position.publish(pos)
+    if pos.linear.x < 1e5 or pos.linear.y < 1e5:
+    	pub_position.publish(pos)
 
     rate.sleep()
 
