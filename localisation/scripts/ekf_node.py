@@ -319,6 +319,13 @@ def main():
         ekf_message.PoseWithCovarianceStamped.pose.orientation.z = ekf_quat[2]
         ekf_message.PoseWithCovarianceStamped.pose.orientation.w = ekf_quat[3]
 
+        ekf_message.PoseWithCovarianceStamped.pose.covariance = [covariance[0,0],covariance[0,1],0,0,0,covariance[0,2],\
+                                                            covariance[1,0],covariance[1,1],0,0,0,covariance[1,2],\
+                                                            0,0,0,0,0,0,\
+                                                            0,0,0,0,0,0,\
+                                                            0,0,0,0,0,0,\
+                                                            covariance[2,0],covariance[2,1],0,0,0,covariance[2,2]]
+
         ekf_broadcaster.sendTransform((X, Y, 0),ekf_quat,current_time,"/ekf_base_link","/odom") 
         
         # publish the message

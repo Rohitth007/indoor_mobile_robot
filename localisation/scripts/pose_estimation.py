@@ -7,6 +7,7 @@ from geometry_msgs.msg import  Twist #importing teist messgae from geometry mess
 from geometry_msgs.msg import PoseWithCovarianceStamped #importig message for publish
 import numpy as np #importing thr numericla python library
 from localisation.srv import odom_reset,odom_resetResponse #importing the nescessary service request and response messages  
+from tf.transformations import euler_from_quaternion
 
 #class to keep track of the ticks which arise from the motor encoders
 class ticks:
@@ -201,6 +202,24 @@ def set_odometry(req):
 
     return odom_resetResponse(True) #setting the response variable in the srv file to be true 
 
+def callback_ekf_position_update(data):
+
+    global pose
+
+    pose[0]=data.pose.pose.position.x 
+    pose[1]=data.pose.pose.position.y
+
+    #conversion of quaternion to euler
+    quaternion = (
+    data.pose.pose.orientation.x,
+    data.pose.pose.orientation.y,
+    data.pose.pose.orientation.z,
+    data.pose.pose.orientation.w)
+
+    (roll, pitch, yaw) = euler_from_quaternion(quaternion)
+
+    pose[2]=yaw
+
 def main():
 
     #acessing the global variables which need to be used 
@@ -243,19 +262,14 @@ def main():
     rospy.Subscriber('/left_ticks', Int64, callback_left) #subscriber to subscribe to the left motor_ticks
     rospy.Subscriber('/right_ticks', Int64, callback_right) #subscriber to subscribe to the left motor_ticks
     rospy.Subscriber("/position",Twist,callback_posyx) #subscriber to subscribe to the posyzx position
+    rospy.Subscriber("/position",PoseWithCovarianceStamped,callback_ekf_position_update)
 
     #loop for rospy
     while not rospy.is_shutdown():
 
         current_time = rospy.Time.now() #getting the current time for using it for transform  
         
-<<<<<<< HEAD
         tick_difference=[0,0] #intialisng the tick difference array which is the control input
-=======
-        rospy.Subscriber('/left_ticks', Int64, callback_left)
-        rospy.Subscriber('/right_ticks', Int64, callback_right)
-        rospy.Subscriber("/pozyx_position",Twist,callback_posyx)
->>>>>>> 9e52596ffdf8fbba7384e509d067af25ae042da4
 
         tick_difference[0] = Tick.left_tick-Tick.prev_left_tick #assigning the left tick difference 
         tick_difference[1] = Tick.right_tick-Tick.prev_right_tick #assigning the right tick difference 
@@ -282,29 +296,33 @@ def main():
         Y=pose[1]
         theta=pose[2]
 
-        #assiging each pozyx vaiable into separate X Y and theta
-        X_posyx=Posyx.x
-        Y_posyx=Posyx.y
         
 
         #getting the quaternion for tf tranform concerning odometry and pozyx
         odom_quat = tf.transformations.quaternion_from_euler(0, 0, theta)
-        pozyx_quat= tf.transformations.quaternion_from_euler(0, 0, Posyx.theta)
+        
         
         #sending each transform for lidar odometry and pozyx
-        odom_broadcaster.sendTransform((X, Y, 0),odom_quat,current_time,"/ekf_base_link","/odom")  
+        odom_broadcaster.sendTransform((X, Y, 0),odom_quat,current_time,"/odometry_base_link","/odom")  
         #lidar_broadcaster.sendTransform((X, Y, 0),odom_quat,current_time,"/laser","/odom") 
-        #posyx_transform.sendTransform((X_posyx,Y_posyx,0), pozyx_quat,current_time,"/pozyx","/odom")
+        
 
         #creating a instance of the custom odometry message 
         odom = PoseWithCovarianceStamped()
-        odom.PoseWithCovarianceStamped.pose.position.x = X
-        odom.PoseWithCovarianceStamped.pose.position.y = Y
-        odom.PoseWithCovarianceStamped.pose.position.z = 0
-        odom.PoseWithCovarianceStamped.pose.orientation.x = odom_quat[0]
-        odom.PoseWithCovarianceStamped.pose.orientation.y = odom_quat[1]
-        odom.PoseWithCovarianceStamped.pose.orientation.z = odom_quat[2]
-        odom.PoseWithCovarianceStamped.pose.orientation.w = odom_quat[3]
+        odom.PoseWithCovarianceStamped.pose.pose.position.x = X
+        odom.PoseWithCovarianceStamped.pose.pose.position.y = Y
+        odom.PoseWithCovarianceStamped.pose.pose.position.z = 0
+        odom.PoseWithCovarianceStamped.pose.pose.orientation.x = odom_quat[0]
+        odom.PoseWithCovarianceStamped.pose.pose.orientation.y = odom_quat[1]
+        odom.PoseWithCovarianceStamped.pose.pose.orientation.z = odom_quat[2]
+        odom.PoseWithCovarianceStamped.pose.pose.orientation.w = odom_quat[3]
+
+        odom.PoseWithCovarianceStamped.pose.covariance = [covariance[0,0],covariance[0,1],0,0,0,covariance[0,2],\
+                                                            covariance[1,0],covariance[1,1],0,0,0,covariance[1,2],\
+                                                            0,0,0,0,0,0,\
+                                                            0,0,0,0,0,0,\
+                                                            0,0,0,0,0,0,\
+                                                            covariance[2,0],covariance[2,1],0,0,0,covariance[2,2]]
         
         # publish the message
         odom_pub.publish(odom) #publishing the odometry message 
