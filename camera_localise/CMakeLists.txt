@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(motion_controller)
+project(camera_localise)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -11,24 +11,17 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  message_generation
+  geometry_msgs
 )
-add_message_files(
-  FILES
-  odometry_custom.msg
-)
-generate_messages(
-   DEPENDENCIES
-   std_msgs
- )
+
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(catkin REQUIRED COMPONENTS message_generation std_msgs geometry_msgs)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -55,11 +48,12 @@ generate_messages(
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  AprilTagDetectionArray.msg
+  AprilTagDetection.msg
+  xytheta.msg
+ )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -76,10 +70,11 @@ generate_messages(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -111,9 +106,8 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES motion_controller
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  LIBRARIES camera_localise
+  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs
 #  DEPENDS system_lib
 )
 
@@ -130,7 +124,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/motion_controller.cpp
+#   src/${PROJECT_NAME}/camera_localise.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -141,7 +135,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/motion_controller_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/camera_localise_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -155,7 +149,7 @@ include_directories(
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
+#    ${catkin_LIBRARIES}
 # )
 
 #############
@@ -167,9 +161,11 @@ include_directories(
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-catkin_install_python(PROGRAMS src/go_to_goal.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+ catkin_install_python(PROGRAMS
+   scripts/camera_tf
+   scripts/kalman_correction
+   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
@@ -180,9 +176,9 @@ catkin_install_python(PROGRAMS src/go_to_goal.py
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
 # install(TARGETS ${PROJECT_NAME}
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+#  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
 # )
 
 ## Mark cpp header files for installation
@@ -204,7 +200,7 @@ catkin_install_python(PROGRAMS src/go_to_goal.py
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_motion_controller.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_camera_localise.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

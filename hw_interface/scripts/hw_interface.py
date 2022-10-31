@@ -137,7 +137,7 @@ def main():
   wheel_radius = rospy.get_param('wheel_radius', 37)
   robot_width = rospy.get_param('robot_width', 475)
 
-  rate = rospy.Rate(2) #2Hz
+  rate = rospy.Rate(4) #2Hz
   while not rospy.is_shutdown():
     
     #Sent commanded velocity to Arduino

@@ -10,12 +10,12 @@
 #define LH_PWM 5
 #define LH_DIR 4
 
-#define GR 19.2 // Gear Ratio
+#define GR 50.9 // Gear Ratio
 #define PPR 7.0 // Pulse Per Revolution
 
-#define MIN_PWM 25
+#define MIN_PWM 40
 #define MAX_PWM 255
-#define MIN_SPD 0.5 // in revolutions per second
+#define MIN_SPD 0.4 // in revolutions per second
 #define MAX_SPD 4 // in revolutions per second
 
 // Proportional speed controller
