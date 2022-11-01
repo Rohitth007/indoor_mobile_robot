@@ -20,18 +20,13 @@ class ticks:
     left_tick=0
     right_tick=0
 
-#class to keep track of the position of pozyx (x,y ,theta)
-class posyx:
-
-    #variables storing the positiona nd orienstation related to pozyx
-    x=0
-    y=0 
-    theta=0
 
 #defining global variables to be used any where as needed 
-Tick=ticks()
-Posyx =posyx()
-pose=(0,0,0)
+Tick=ticks() #class for stroing the ticks values
+
+
+pose=(0,0,0) #intial pose as a global variable
+covariance = np.diag([100.0**2, 100.0**2, (10.0 / 180.0 * pi) ** 2]) #intialising the covariance to large value
 
 #function to get the jacobian associated with the current state due to previous state 
 def get_jacobian_state(pose,control,robo_width):
@@ -108,8 +103,9 @@ def get_jacobian_control(pose,control,robo_width):
 
         return m
 
-# 
-def get_covariance(covariance,current_pose,control,control_motion_factor,control_turn_factor,robot_width):
+# function to calcualte the new covariance assciated the data after applying the control
+def get_covariance(current_pose,control,control_motion_factor,control_turn_factor,robot_width):
+    global covariance
 
     #extracting the left and right control input 
     left, right = control
@@ -126,7 +122,7 @@ def get_covariance(covariance,current_pose,control,control_motion_factor,control
 
     G_t = get_jacobian_state(current_pose, control, robot_width) # getting covariance in teh current sttae due to previous state
 
-    V   = get_jacobian_control(current_pose, control,robot_width) #getting theh covariance due to the control factor 
+    V = get_jacobian_control(current_pose, control,robot_width) #getting theh covariance due to the control factor 
 
     covariance = np.dot(G_t, np.dot(covariance, G_t.T)) + np.dot(V, np.dot(control_covariance, V.T)) # updating the covariance as the sum of covariance due to previous stse and the control input 
 
@@ -186,14 +182,6 @@ def callback_right(msg):
 
     Tick.right_tick=msg.data #updating the right tick 
 
-def callback_posyx(msg):
-
-    global Posyx #acessing the global class pozyx
-
-    Posyx.x=msg.linear.x #updating the x position
-    Posyx.y=msg.linear.y #updating the y position
-    Posyx.theta=msg.angular.z #updating the z pisiton
-
 def set_odometry(req):
 
     global pose #accessing the global variable pose 
@@ -204,21 +192,45 @@ def set_odometry(req):
 
 def callback_ekf_position_update(data):
 
+    #acessing the global pose and covariance 
     global pose
+    global covariance
 
+    #updating the first two elements of the pose as the x and y ouputted by ekf_node
     pose[0]=data.pose.pose.position.x 
     pose[1]=data.pose.pose.position.y
 
     #conversion of quaternion to euler
+
+    #extracting the quaternion
     quaternion = (
     data.pose.pose.orientation.x,
     data.pose.pose.orientation.y,
     data.pose.pose.orientation.z,
     data.pose.pose.orientation.w)
 
+    #getting euler angles from quaternion
     (roll, pitch, yaw) = euler_from_quaternion(quaternion)
 
+    #updatin the orientation
     pose[2]=yaw
+
+
+    #defining the new 3x3 zeros matrix and updating it wiht rlevant values from the 1x36 covariance array from ekf_node
+    covariance_from_ekf = np.zeros((3,3))
+
+    covariance_from_ekf[0,0] = PoseWithCovarianceStamped.pose.covariance[0]
+    covariance_from_ekf[1,1] = PoseWithCovarianceStamped.pose.covariance[7]
+    covariance_from_ekf[2,2] = PoseWithCovarianceStamped.pose.covariance[35]
+    covariance_from_ekf[1,2] = PoseWithCovarianceStamped.pose.covariance[10]
+    covariance_from_ekf[2,1] = PoseWithCovarianceStamped.pose.covariance[10]
+    covariance_from_ekf[0,1] = PoseWithCovarianceStamped.pose.covariance[2]
+    covariance_from_ekf[1,0] = PoseWithCovarianceStamped.pose.covariance[2]
+    covariance_from_ekf[2,0] = PoseWithCovarianceStamped.pose.covariance[5]
+    covariance_from_ekf[0,2] = PoseWithCovarianceStamped.pose.covariance[5]
+
+    #updating the odometry covariance 
+    covariance = np.copy(covariance_from_ekf)
 
 def main():
 
@@ -226,20 +238,20 @@ def main():
     global Tick
     global Posyx
     global pose
+    global covariance
 
-    #creating a publisher topic named pose and a node named pose_update 
-    odom_pub = rospy.Publisher("odom1",PoseWithCovarianceStamped, queue_size=1)
+    #creating a publisher topic named odom and a node named odom_node 
+    odom_pub = rospy.Publisher("odom",PoseWithCovarianceStamped, queue_size=1)
 
-    #creating tf broadcasters
+    #creating tf broadcasters for odometry
     odom_broadcaster = tf.TransformBroadcaster() #tf broadcasters for odometry
-    lidar_broadcaster = tf.TransformBroadcaster() #tf broadcasters for lidar
-    posyx_transform = tf.TransformBroadcaster() #tf broadcasters for pozyx
-
+    #lidar_broadcaster = tf.TransformBroadcaster() #tf broadcasters for lidar
+    
     #intialising the odom_node
     rospy.init_node('odom_node')
 
     #creating a service called reset_odometry to seta pose to odometry intially or at any other time
-    s = rospy.Service('reset_odometry', odom_reset, set_odometry)
+    service_reset_odometry = rospy.Service('reset_odometry', odom_reset, set_odometry)
 
 
     #initialising the rate variable to an appropriate rate 
@@ -249,20 +261,17 @@ def main():
     ticks_to_millimeter = rospy.get_param("ticks_to_millimeter") #in mm per tick
     width_robo = rospy.get_param("robot_width")  #in mm
     scanner_displacement = rospy.get_param("scanner_displacement")   #in mm
-    control_motion_factor =  rospy.get_param("control_motion_factor") #motion factor which relates to the error due to stright line motion
+    control_motion_factor =  rospy.get_param("control_motion_factor") #motion factor which relates to the error due to straight line motion
     control_turn_factor = rospy.get_param("control_turn_factor") #turn factor which relates to the error due to turning moiton
    
     #begining pose estimation
     print("Starting Pose estimation")
-
-   #intialising the covariance as a large value to see the effect of filtering being prominent 
-    covariance = np.diag([100.0**2, 100.0**2, (10.0 / 180.0 * pi) ** 2])
+    
 
     #different subscribers involved 
     rospy.Subscriber('/left_ticks', Int64, callback_left) #subscriber to subscribe to the left motor_ticks
     rospy.Subscriber('/right_ticks', Int64, callback_right) #subscriber to subscribe to the left motor_ticks
-    rospy.Subscriber("/position",Twist,callback_posyx) #subscriber to subscribe to the posyzx position
-    rospy.Subscriber("/position",PoseWithCovarianceStamped,callback_ekf_position_update)
+    rospy.Subscriber("/pose_ekf",PoseWithCovarianceStamped,callback_ekf_position_update) #subscribing to the ekf node to update the pose using for prediction
 
     #loop for rospy
     while not rospy.is_shutdown():
@@ -279,7 +288,7 @@ def main():
         
         control = np.array((tick_difference[0],tick_difference[1])) * ticks_to_millimeter #transforming the variable into millimeters for control input 
 
-        covariance = get_covariance(covariance,pose,control,control_motion_factor,control_turn_factor,width_robo) #getting the new covariance  asssicated with the state using curretn pose , control covariance etc 
+        covariance = get_covariance(pose,control,control_motion_factor,control_turn_factor,width_robo) #getting the new covariance  asssicated with the state using curretn pose , control covariance etc 
 
         pose = pose_update(tick_difference,ticks_to_millimeter,width_robo,scanner_displacement)#updating pase uisng current state 
 
@@ -296,13 +305,12 @@ def main():
         Y=pose[1]
         theta=pose[2]
 
-        
 
         #getting the quaternion for tf tranform concerning odometry and pozyx
         odom_quat = tf.transformations.quaternion_from_euler(0, 0, theta)
         
         
-        #sending each transform for lidar odometry and pozyx
+        #sending each transform for lidar and  odometry 
         odom_broadcaster.sendTransform((X, Y, 0),odom_quat,current_time,"/odometry_base_link","/odom")  
         #lidar_broadcaster.sendTransform((X, Y, 0),odom_quat,current_time,"/laser","/odom") 
         

@@ -18,7 +18,7 @@ robot_orientation =[]
 
 fig , ax1 = plt.subplots()
 fig2, ax2 = plt.subplots()
-file_path = os.path.join(cwd_path, 'thin.png')
+file_path = os.path.join(cwd_path, 'map_final.png')
 img = plt.imread(file_path)
 ax1.imshow(img, extent=[0, 24000, 0, 16000])
 ax1.set(xlabel='X(m)', ylabel='Y(m)')
@@ -45,7 +45,7 @@ def pose_callback(data):
         
         robot_1.set_offsets([x_start, y_start ])  
 
-        robot_orientation_radians = (data.angular.z)
+        robot_orientation_radians = (data.angular.z-90)*(np.pi/180)
 
         x_end = 1000*np.cos(robot_orientation_radians)+x_start
         y_end = 1000*np.sin(robot_orientation_radians)+y_start
@@ -60,7 +60,7 @@ def pose_callback(data):
 if __name__ == '__main__':
     rospy.init_node('rover_visualisation', anonymous=True)
 
-    rospy.Subscriber("/odom1", Twist, pose_callback)
+    rospy.Subscriber("/pozyx_position", Twist, pose_callback)
     
     plt.show(block=True)
     rospy.spin()
