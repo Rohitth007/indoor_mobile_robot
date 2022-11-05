@@ -12,6 +12,8 @@ endMarker = 62 #Unicode code for >
 
 pos = Twist()
 
+#Number pf values for taking average
+mov_avg_length = 10
 #============================
 def recvFromArduino():
 # Receiving a message from the Arduino involves
@@ -53,12 +55,10 @@ def waitForArduino():
     msg = recvFromArduino()
  
   print(msg)
-  
   return
-# Function for gracefull shutdown
+
+#Function for safe shutdown 
 def turn_off():
-  #Function for safe shutdown 
-  
   print('pozyx_interface node turning off')
   time.sleep(3)
   ser.close()
@@ -66,8 +66,12 @@ def turn_off():
 
 #===========================    	
 def main():
-  global ser, pos 
-
+  global ser, pos
+  
+  x_avg = []
+  y_avg = []
+  theta_avg = [] 
+	
   #Initialising             
   rospy.init_node('pozyx_interface_node')
   rospy.on_shutdown(turn_off)
@@ -76,9 +80,8 @@ def main():
   print('pozyx_interface node running')
   pub_position = rospy.Publisher("/pozyx_position",Twist, queue_size = 1)
  
-  rate = rospy.Rate(20) #20Hz
+  rate = rospy.Rate(10) #10Hz
   while not rospy.is_shutdown():
-   
     #Update ticks info from arduino
     ser.reset_input_buffer()
     #Wait until something comes into the serial recieve buffer
@@ -88,19 +91,36 @@ def main():
     recieved_position_data = recvFromArduino()
     
     position = [int(x) for x in recieved_position_data.split(',')]
-    pos.linear.x = position[0]
-    pos.linear.y = position[1]
-    pos.angular.z = position[2]
-    if pos.linear.x < 1e5 or pos.linear.y < 1e5:
-    #pos.angular.z = position[3]
-    #pos.angular.y = position[4]
-    #pos.angular.x = position[5]
-    if pos.linear.x < 1e5 or pos.linear.y < 1e5:
-    	pub_position.publish(pos)
+    
+    
+    if position[0] < 1e5 and position[1] < 1e5:
+
+      x_avg.append(position[0])
+      y_avg.append(position[1])
+      theta_avg.append(position[2])
+
+      #Computing the moving average of the pose
+      if len(x_avg) == mov_avg_length:
+        pos.linear.x = sum(x_avg)/len(x_avg)
+        x_avg.pop(0)
+      else:
+        pos.linear.x = position[0]
+
+      if len(y_avg) == mov_avg_length:
+        pos.linear.y = sum(y_avg)/len(y_avg)
+        y_avg.pop(0)
+      else:
+        pos.linear.y = position[1]
+
+      if len(theta_avg) == mov_avg_length:
+        pos.angular.z = sum(theta_avg)/len(theta_avg)
+        theta_avg.pop(0)
+      else:
+        pos.angular.z = position[2]    
+
+      pub_position.publish(pos)
 
     rate.sleep()
-
-  return
 
 if __name__ == '__main__':
     try:
