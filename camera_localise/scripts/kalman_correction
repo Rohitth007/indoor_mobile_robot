@@ -6,26 +6,29 @@ import tf
 from tf.transformations import euler_from_quaternion
 import numpy as np
 from camera_localise.msg import *
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
 class EkfCorrect():
 	def __init__(self):
-	self.apt_pos = None
-	self.pos_new = None
-	self.cov_new = None
+		self.apt_pos = None
+		self.pos_new = None
+		self.cov_new = None
 	
 	
-	def get_data():
+	def get_data(self,msg):
 		# Read data from world to robot, if any available
-		listener.waitForTransform('world','robot',rospy.Time(), rospy.Duration(1.0))
+		# listener= tf.TransformListener()
+		# listener.waitForTransform('world','robot',rospy.Time(), rospy.Duration(1.0))
 		try:
-			(self.apt_pos,rot) = listener.lookupTransform('world','robot',rospy.Time())
-			theta = euler_from_quaternion(rot)[-1]
-			#err_z = pos[-1]-z0
-			self.apt_pos[-1] = theta[-1]
+		# 	(self.apt_pos,rot) = listener.lookupTransform('world','robot',rospy.Time())
+		# 	theta = euler_from_quaternion(rot)[-1]
+		# 	#err_z = pos[-1]-z0
+		# 	self.apt_pos[-1] = theta[-1]
+
 		except:
 			self.apt_pos = None
 
-	def correct(msg_odom,msg_apt):
+	def correct(self,msg_odom,msg_apt):
 		pos_odom = np.asarray([msg_odom.x,msg_odom.y,msg_odom.theta])
 		pos_apt = np.asarray(self.apt_pos)
 		cov_odom = np.reshape(msg.covariance,(3,3))*1e-6
@@ -33,18 +36,23 @@ class EkfCorrect():
 		K = np.matmul(cov_odom,np.linalg.inv(cov_odom+cov_apt))
 		self.pos_new = pos_odom + np.matmul(K,pos_apt-pos_odom)
 		self.cov_new = np.eye(3) - np.matmul(K,cov_odom)
+
+	def aprtag_measure_update(self):
+		rospy.init_node('pose_correct')
+		msg_odom = rospy.Subscriber('/odom',PoseWithCovarianceStamped,self.)
+		msg_apt = rospy.Subscriber("/robot_pose",PoseWithCovarianceStamped,self.get_data())
 	
 		
 		
 
-if __name__ = "__main__":
+if __name__ == "__main__":
 	ekf = EkfCorrect()
 	
-	rospy.init_node('pose_correct')
 	
-	msg_odom = message_filters.Subscriber('/odom')
-	msg_apt = message_filters.Subscriber("/tag_detections",AprilTagDetectionArray,send_camera_pose)
-	ts = message_filters.TimeSynchronizer([msg_odom, msg_apt], 10)
+	
+	
+	
+	ts = message_filters.ApproximateTimeSynchronizer([msg_odom, msg_apt], 1,1)
 	
 	pub = rospy.Publisher('corrected_pos', xytheta, queue_size=10)
 	

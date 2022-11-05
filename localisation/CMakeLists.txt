@@ -153,7 +153,7 @@ include_directories(
 #############
 ## Install ##
 #############
-catkin_install_python(PROGRAMS scripts/pose_estimation.py scripts/line_extract_node.py
+catkin_install_python(PROGRAMS scripts/odometry_pose_estimation.py scripts/line_extract_node.py 
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 # all install targets should use catkin DESTINATION variables

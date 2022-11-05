@@ -1,14 +1,20 @@
 <launch>
 
- <node pkg="localisation" type="pose_estimation.py" name="odom_node"/>
+ <node pkg="localisation" type="odometry_pose_estimation.py" name="odom_node"/>
+ <node pkg="localisation" type="ekf_node.py" name="ekf_node"/>
+
+ <!--node pkg="localisation" type="pose_estimation.py" name="pose_update"/-->
+ <!--node pkg="localisation" type="line_extract_node.py" name="feature_from_lidar"/-->
+ 
+
+ <!--node pkg="localisation" type="pose_estimation.py" name="odom_node"/-->
  <!--node pkg="localisation" type="line_extract_node.py" name="feature_from_lidar"/-->
  <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_laser" args="0 0 0 0 0 0 1 base_link laser" />
 
-  
 
  <!-- Params -->
  <rosparam file="$(find localisation)/maps/map.yaml" />
- <param name="ticks_to_meter" value="1.83908" type="double"/><!--mm-per-tick-->
+ <param name="ticks_to_millimeter" value="1.83908" type="double"/><!--mm-per-tick-->
  <param name="robot_width" value="475" type="double"/> <!-- mm -->
  <param name="wheel_radius" value="37" type="double"/> <!-- mm -->
  <param name="scanner_displacement" value="0" type="double"/> <!-- mm -->

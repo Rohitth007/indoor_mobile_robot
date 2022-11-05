@@ -10,6 +10,7 @@ import io
 
 from geometry_msgs.msg import TransformStamped
 from apriltag_ros.msg import AprilTagDetectionArray
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
 def get_tag_tf(msg):
 	current = rospy.Time.now()
@@ -48,8 +49,24 @@ def send_camera_pose(msg):
 	# tros = tf.TransformerROS(cache_time=rospy.Duration(200.0))
 	tags = get_tag_world()
 	br = tf.TransformBroadcaster()
-	# cr = tf.TransformBroadcaster()
-	q_cr = tf.transformations.quaternion_from_euler(0,-1.5708,0)
+	q_rc = tf.transformations.quaternion_from_euler(0,-1.5708,-1.5708)
+	q_wr = tf.transformations.quaternion_multipy(q_cw,q_rc)
+	robotpose = PoseWithCovarianceStamped()
+	robotpose.PoseWithCovarianceStamped.pose.pose.position.x = p_cw[0]
+	robotpose.PoseWithCovarianceStamped.pose.pose.position.y = p_cw[1]
+	robotpose.PoseWithCovarianceStamped.pose.pose.position.z = p_cw[2]
+	robotpose.PoseWithCovarianceStamped.pose.pose.orientation.x = q_wr[0]
+	robotpose.PoseWithCovarianceStamped.pose.pose.orientation.y = q_wr[1]
+	robotpose.PoseWithCovarianceStamped.pose.pose.orientation.z = q_wr[2]
+	robotpose.PoseWithCovarianceStamped.pose.pose.orientation.w = q_wr[3]
+	robotpose.PoseWithCovarianceStamped.pose.covariance = [500,0,0,0,0,50,\
+															0,50,0,0,0,10,\
+															0,0,0,0,0,0,\
+															0,0,0,0,0,0,\
+															0,0,0,0,0,0,\
+															50,10,0,0,0,500]
+	pub = rospy.Publisher('/robot_pose',PoseWithCovarianceStamped,queue_size=1)
+	
 	R = rospy.Rate(10)
 	while not rospy.is_shutdown():
 		try:
@@ -61,6 +78,7 @@ def send_camera_pose(msg):
 		p_cw,q_cw = get_camera_tf(tags,T)
 		br.sendTransform(p_cw,q_cw,rospy.Time.now(),"camera","world")
 		# cr.sendTransform((0,0,0),q_cr,rospy.Time.now(),"robot","camera")
+		pub.publish(robotpose)
 		R.sleep()
 	
 	

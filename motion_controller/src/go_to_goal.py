@@ -43,7 +43,11 @@ def main():
     global RPose,GPose,vControl,wControl
     
     rospy.init_node('go_to_goal_node')
+<<<<<<< HEAD
+    rate = rospy.Rate(0.25)
+=======
     rate = rospy.Rate(10)
+>>>>>>> 766c9dec0efde1e2fbd3786282d4cf486c19efbf
     
     control_msg = Twist()
     #Takes the user input
