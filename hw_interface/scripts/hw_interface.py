@@ -95,27 +95,26 @@ def convert_vel_cmd(msg):
   vel_rl_max = max(r_speed,l_speed)
   vel_rl_min = min(r_speed,l_speed)
   
-  if cmd_linear_vel != 0 and cmd_angular_vel != 0: 
-  
-  	if vel_rl_max > max_speed:
-  		r_speed = r_speed - (vel_rl_max - max_speed)
-  		l_speed = l_speed - (vel_rl_max - max_speed)
-  	elif vel_rl_min < -max_speed:
-  		r_speed = r_speed - (vel_rl_min + max_speed)
-  		l_speed = l_speed - (vel_rl_min + max_speed)
-  	if abs(r_speed) < min_speed or abs(l_speed) < min_speed:	
-  		if abs(r_speed - l_speed) < 2*min_speed:
-  			r_speed = math.copysign(min_speed,r_speed)
-  			l_speed = math.copysign(min_speed,l_speed)				
-  		else:
-  			if abs(r_speed) < min_speed:
-  				speed_sign = math.copysign(min_speed,r_speed)
-  				l_speed = l_speed + (speed_sign - r_speed)
-  				r_speed = speed_sign 
-  			if abs(l_speed) < min_speed:
-  				speed_sign = math.copysign(min_speed,l_speed)
-  				r_speed = r_speed + (speed_sign - l_speed)
-  				l_speed = speed_sign 	
+  if cmd_linear_vel != 0 and cmd_angular_vel != 0:
+    if vel_rl_max > max_speed:
+      r_speed = r_speed - (vel_rl_max - max_speed)
+      l_speed = l_speed - (vel_rl_max - max_speed)
+    elif vel_rl_min < -max_speed:
+      r_speed = r_speed - (vel_rl_min + max_speed)
+      l_speed = l_speed - (vel_rl_min + max_speed)
+    if abs(r_speed) < min_speed or abs(l_speed) < min_speed:
+      if abs(r_speed - l_speed) < 2*min_speed:
+        r_speed = math.copysign(min_speed,r_speed)
+        l_speed = math.copysign(min_speed,l_speed)
+      else:
+        if abs(r_speed) < min_speed:
+          speed_sign = math.copysign(min_speed,r_speed)
+          l_speed = l_speed + (speed_sign - r_speed)
+          r_speed = speed_sign 
+        if abs(l_speed) < min_speed:
+          speed_sign = math.copysign(min_speed,l_speed)
+          r_speed = r_speed + (speed_sign - l_speed)
+          l_speed = speed_sign 	
   right_speed = r_speed
   left_speed = l_speed 	
   return
