@@ -15,7 +15,7 @@ struct node_helper
   {
     cmd_vel.angular.z = scale_angular * joy->axes[axis_angular];
     cmd_vel.linear.x = scale_linear * joy->axes[axis_linear];
-    if(joy->axes[axis_autonomous] == -1)
+    if(joy->axes[axis_autonomous] < -0.5)
     	isAutonomous = true;
     else
     	isAutonomous = false;	
