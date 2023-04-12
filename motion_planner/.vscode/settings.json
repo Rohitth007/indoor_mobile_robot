@@ -1,0 +1,9 @@
+{
+    "cSpell.languageSettings": [],
+    "editor.fontVariations": false,
+    "python.linting.pylintPath": "pylint",
+    "python.linting.pylintEnabled": false,
+    "python.linting.pylintArgs": [
+        "--disable={c0103}"
+    ]
+}
